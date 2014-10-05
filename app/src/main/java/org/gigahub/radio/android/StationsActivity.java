@@ -1,8 +1,12 @@
 package org.gigahub.radio.android;
 
 import android.app.Activity;
+import android.app.Notification;
+import android.app.PendingIntent;
 import android.content.Context;
-import android.os.Bundle;
+import android.content.Intent;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -12,12 +16,15 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import org.androidannotations.annotations.AfterViews;
 import org.androidannotations.annotations.Background;
 import org.androidannotations.annotations.EActivity;
+import org.androidannotations.annotations.ItemClick;
 import org.androidannotations.annotations.UiThread;
 import org.androidannotations.annotations.ViewById;
 import org.androidannotations.annotations.rest.RestService;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.gigahub.radio.android.api.RestApiClient;
@@ -27,16 +34,16 @@ import org.gigahub.radio.android.api.Station;
 public class StationsActivity extends Activity {
 
     @ViewById ListView list;
+	@ViewById TextView stationName;
 
     @RestService RestApiClient apiClient;
 
     private ArrayAdapter<Station> adapter;
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+	@AfterViews
+	void afterViews() {
 
-        adapter = new ArrayAdapter<Station>(this, R.layout.station_list_item) {
+		adapter = new ArrayAdapter<Station>(this, R.layout.station_list_item) {
 			@Override
 			public View getView(int position, View convertView, ViewGroup parent) {
 
@@ -52,14 +59,13 @@ public class StationsActivity extends Activity {
 			}
 		};
 
-    }
+		list.setAdapter(adapter);
+	}
 
 	@Override
 	protected void onResume() {
 		super.onResume();
-
-		list.setAdapter(adapter);
-		getBackgroundStations();
+		getStationsInBackground();
 	}
 
 	@Override
@@ -85,15 +91,27 @@ public class StationsActivity extends Activity {
     }
 
     @Background
-    void getBackgroundStations() {
+    void getStationsInBackground() {
         List<Station> stations = apiClient.getStations();
-
 		updateStationList(stations);
     }
 
 	@UiThread
 	void updateStationList(List<Station> stations) {
-
+		adapter.clear();
 		adapter.addAll(stations);
 	}
+
+	@ItemClick
+	void listItemClicked(Station station) {
+		stationName.setText(station.getName());
+
+		Intent intent = new Intent(this, PlayService_.class);
+		intent.putExtra("station.name", station.getName());
+		intent.putExtra("station.url", station.getStreams().get(0).getUrl());
+
+		stopService(intent);
+		startService(intent);
+	}
+
 }

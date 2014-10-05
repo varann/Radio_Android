@@ -8,7 +8,7 @@ android {
 
     defaultConfig {
         applicationId "gigahub.org.radio_android"
-        minSdkVersion 15
+        minSdkVersion 16
         targetSdkVersion 20
         versionCode 1
         versionName "1.0"
@@ -46,13 +46,9 @@ dependencies {
 
     apt "org.androidannotations:androidannotations:3.1"
     compile 'org.androidannotations:androidannotations-api:3.1'
-//    compile 'com.fasterxml.jackson:jackson-parent:2.5-rc1'
-//    compile 'com.fasterxml.jackson.core:jackson-core:2.4.3'
-//    compile 'com.fasterxml.jackson.core:jackson-databind:2.4.3'
-//    compile 'org.codehaus.jackson:jackson-core-asl:1.9.11'
-//    compile 'org.codehaus.jackson:jackson-mapper-asl:1.9.11'
     compile 'org.codehaus.jackson:jackson-mapper-lgpl:1.9.13'
     compile 'org.springframework.android:spring-android-rest-template:1.0.0.RELEASE'
-
+    compile 'com.android.support:support-v4:20.0.0@aar'
+    compile 'org.slf4j:slf4j-android:1.7.7'
 
 }

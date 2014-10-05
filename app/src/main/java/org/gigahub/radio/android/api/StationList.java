@@ -9,7 +9,7 @@ public class StationList {
     List<Station> stations;
 //
 //    @JsonValue
-//    public List<Station> getBackgroundStations() {
+//    public List<Station> getStationsInBackground() {
 //        return stations;
 //    }
 //
