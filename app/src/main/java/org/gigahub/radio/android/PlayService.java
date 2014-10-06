@@ -19,7 +19,9 @@ import java.io.IOException;
 public class PlayService extends Service implements MediaPlayer.OnPreparedListener, MediaPlayer.OnErrorListener {
 
 	private static final Logger L = LoggerFactory.getLogger(PlayService.class.getSimpleName());
-	MediaPlayer player = null;
+
+	private MediaPlayer player = null;
+	private Intent currentIntent;
 
 	@Override
 	public void onCreate() {
@@ -28,25 +30,78 @@ public class PlayService extends Service implements MediaPlayer.OnPreparedListen
 		player = new MediaPlayer();
 		player.setAudioStreamType(AudioManager.STREAM_MUSIC);
 		player.setOnPreparedListener(this);
+
+		currentIntent = null;
 	}
 
 	public int onStartCommand(Intent intent, int flags, int startId) {
 
-		PendingIntent pIntent = PendingIntent.getActivity(this, 1,
+		currentIntent = intent;
+
+		if (Actions.STOP.equals(intent.getAction())) {
+			player.stop();
+			stopForeground(true);
+			return START_NOT_STICKY;
+		}
+
+		if (Actions.PAUSE.equals(intent.getAction())) {
+			showNotification(false);
+			player.pause();
+			return START_NOT_STICKY;
+		} else {
+			player.reset();
+		}
+
+		showNotification(true);
+		playStation(intent.getStringExtra("station.url"));
+
+		return START_NOT_STICKY;
+	}
+
+	private void showNotification(boolean progress) {
+
+		boolean pause = Actions.PAUSE.equals(currentIntent.getAction());
+
+		PendingIntent pStationsIntent = PendingIntent.getActivity(this, 0,
 				new Intent(this, StationsActivity_.class),
-				 PendingIntent.FLAG_UPDATE_CURRENT);
+				PendingIntent.FLAG_UPDATE_CURRENT);
+
+		Intent currentStationIntent = new Intent(this, PlayService_.class);
+		currentStationIntent.putExtra("station.name", currentIntent.getStringExtra("station.name"));
+		currentStationIntent.putExtra("station.url", currentIntent.getStringExtra("station.url"));
+
+		if (pause) {
+			currentStationIntent.setAction(Actions.PLAY);
+		} else {
+			currentStationIntent.setAction(Actions.PAUSE);
+		}
+		PendingIntent pPauseIntent = PendingIntent.getService(this, 0,
+				currentStationIntent,
+				PendingIntent.FLAG_UPDATE_CURRENT);
+
+		currentStationIntent.setAction(Actions.STOP);
+		PendingIntent pStopIntent = PendingIntent.getService(this, 0,
+				currentStationIntent,
+				PendingIntent.FLAG_UPDATE_CURRENT);
+
 
 		NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
 				.setContentTitle("Radio")
-				.setContentText(intent.getStringExtra("station.name"))
-				.setSmallIcon(R.drawable.ic_launcher)
-				.setContentIntent(pIntent)
-				.setOngoing(true);
+				.setContentText(currentIntent.getStringExtra("station.name"))
+				.setSmallIcon(R.drawable.ic_action_volume_on)
+				.setContentIntent(pStationsIntent)
+				.setOngoing(true)
+				.addAction(pause ? R.drawable.ic_action_play : R.drawable.ic_action_pause, pause ? "Play" : "Pause", pPauseIntent)
+				.addAction(R.drawable.ic_action_stop, "Stop", pStopIntent);
 
+		if (progress) {
+			builder.setProgress(0, 0, true);
+		}
 
 		startForeground(1, builder.build());
+	}
 
-		String url = intent.getStringExtra("station.url");
+	private void playStation(String url) {
 
 		if (!TextUtils.isEmpty(url)) {
 
@@ -54,13 +109,11 @@ public class PlayService extends Service implements MediaPlayer.OnPreparedListen
 				player.setDataSource(url);
 				player.prepareAsync();
 			} catch (IOException e) {
-				L.error("Wrong url!", e);			}
+				L.error("Wrong url!", e);
+			}
 		} else {
 			L.warn("No url for streaming");
 		}
-
-
-		return START_NOT_STICKY;
 	}
 
 	@Override
@@ -69,6 +122,8 @@ public class PlayService extends Service implements MediaPlayer.OnPreparedListen
 	}
 
 	public void onPrepared(MediaPlayer player) {
+		showNotification(false);
+
 		player.start();
 	}
 
@@ -85,4 +140,6 @@ public class PlayService extends Service implements MediaPlayer.OnPreparedListen
 		mediaPlayer.reset();
 		return false;
 	}
+
+
 }

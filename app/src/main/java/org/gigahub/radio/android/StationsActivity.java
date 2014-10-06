@@ -13,11 +13,13 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
 import org.androidannotations.annotations.AfterViews;
 import org.androidannotations.annotations.Background;
+import org.androidannotations.annotations.Click;
 import org.androidannotations.annotations.EActivity;
 import org.androidannotations.annotations.ItemClick;
 import org.androidannotations.annotations.UiThread;
@@ -35,10 +37,13 @@ public class StationsActivity extends Activity {
 
     @ViewById ListView list;
 	@ViewById TextView stationName;
+	@ViewById ImageView pause;
+	@ViewById ImageView stop;
 
     @RestService RestApiClient apiClient;
 
     private ArrayAdapter<Station> adapter;
+	private Station currentStation;
 
 	@AfterViews
 	void afterViews() {
@@ -60,6 +65,7 @@ public class StationsActivity extends Activity {
 		};
 
 		list.setAdapter(adapter);
+
 	}
 
 	@Override
@@ -104,7 +110,10 @@ public class StationsActivity extends Activity {
 
 	@ItemClick
 	void listItemClicked(Station station) {
+		currentStation = station;
+
 		stationName.setText(station.getName());
+		pause.setImageResource(R.drawable.ic_action_pause);
 
 		Intent intent = new Intent(this, PlayService_.class);
 		intent.putExtra("station.name", station.getName());
@@ -114,4 +123,34 @@ public class StationsActivity extends Activity {
 		startService(intent);
 	}
 
+	@Click
+	void pauseClicked() {
+		if (currentStation == null) return;
+
+		Intent intent = new Intent(this, PlayService_.class);
+		intent.putExtra("station.name", currentStation.getName());
+		intent.putExtra("station.url", currentStation.getStreams().get(0).getUrl());
+
+		if (pause.getDrawable().getConstantState().equals(getResources().getDrawable(R.drawable.ic_action_pause).getConstantState())) {
+			pause.setImageResource(R.drawable.ic_action_play);
+			intent.setAction(Actions.PAUSE);
+		} else {
+			pause.setImageResource(R.drawable.ic_action_pause);
+			intent.setAction(Actions.PLAY);
+		}
+
+		startService(intent);
+	}
+
+	@Click
+	void stopClicked() {
+		currentStation = null;
+
+		stationName.setText("");
+		pause.setImageResource(R.drawable.ic_action_play);
+
+		Intent stopIntent = new Intent(this, PlayService_.class);
+		stopIntent.setAction(Actions.STOP);
+		stopService(stopIntent);
+	}
 }
