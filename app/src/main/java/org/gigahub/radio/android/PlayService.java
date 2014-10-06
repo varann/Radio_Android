@@ -10,15 +10,18 @@ import android.support.v4.app.NotificationCompat;
 import android.text.TextUtils;
 
 import org.androidannotations.annotations.EService;
+import org.androidannotations.annotations.SystemService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
 @EService
-public class PlayService extends Service implements MediaPlayer.OnPreparedListener, MediaPlayer.OnErrorListener {
+public class PlayService extends Service implements MediaPlayer.OnPreparedListener, MediaPlayer.OnErrorListener, AudioManager.OnAudioFocusChangeListener {
 
 	private static final Logger L = LoggerFactory.getLogger(PlayService.class.getSimpleName());
+
+	@SystemService AudioManager audioManager;
 
 	private MediaPlayer player = null;
 	private Intent currentIntent;
@@ -27,11 +30,23 @@ public class PlayService extends Service implements MediaPlayer.OnPreparedListen
 	public void onCreate() {
 		super.onCreate();
 
+		currentIntent = null;
+
+		initMediaPlayer();
+
+		int result = audioManager.requestAudioFocus(this, AudioManager.STREAM_MUSIC,
+				AudioManager.AUDIOFOCUS_GAIN);
+
+		if (result != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+			//TODO 
+		}
+
+	}
+
+	private void initMediaPlayer() {
 		player = new MediaPlayer();
 		player.setAudioStreamType(AudioManager.STREAM_MUSIC);
 		player.setOnPreparedListener(this);
-
-		currentIntent = null;
 	}
 
 	public int onStartCommand(Intent intent, int flags, int startId) {
@@ -131,6 +146,7 @@ public class PlayService extends Service implements MediaPlayer.OnPreparedListen
 	public void onDestroy() {
 		super.onDestroy();
 		player.release();
+		audioManager.abandonAudioFocus(this);
 		stopForeground(true);
 	}
 
@@ -142,4 +158,27 @@ public class PlayService extends Service implements MediaPlayer.OnPreparedListen
 	}
 
 
+	@Override
+	public void onAudioFocusChange(int focusChange) {
+		switch (focusChange) {
+			case AudioManager.AUDIOFOCUS_GAIN:
+				if (player == null) initMediaPlayer();
+				else if (!player.isPlaying()) player.start();
+				player.setVolume(1.0f, 1.0f);
+				break;
+
+			case AudioManager.AUDIOFOCUS_LOSS:
+				if (player.isPlaying()) player.stop();
+				onDestroy();
+				break;
+
+			case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
+				if (player.isPlaying()) player.pause();
+				break;
+
+			case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
+				if (player.isPlaying()) player.setVolume(0.1f, 0.1f);
+				break;
+		}
+	}
 }
