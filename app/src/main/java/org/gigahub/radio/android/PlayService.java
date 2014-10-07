@@ -1,5 +1,7 @@
 package org.gigahub.radio.android;
 
+import android.app.Notification;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
@@ -20,8 +22,10 @@ import java.io.IOException;
 public class PlayService extends Service implements MediaPlayer.OnPreparedListener, MediaPlayer.OnErrorListener, AudioManager.OnAudioFocusChangeListener {
 
 	private static final Logger L = LoggerFactory.getLogger(PlayService.class.getSimpleName());
+	private static final int NOTI_ID = 1;
 
 	@SystemService AudioManager audioManager;
+	@SystemService NotificationManager notificationManager;
 
 	private MediaPlayer player = null;
 	private Intent currentIntent;
@@ -38,7 +42,7 @@ public class PlayService extends Service implements MediaPlayer.OnPreparedListen
 				AudioManager.AUDIOFOCUS_GAIN);
 
 		if (result != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-			//TODO 
+			//TODO
 		}
 
 	}
@@ -47,6 +51,7 @@ public class PlayService extends Service implements MediaPlayer.OnPreparedListen
 		player = new MediaPlayer();
 		player.setAudioStreamType(AudioManager.STREAM_MUSIC);
 		player.setOnPreparedListener(this);
+		player.setOnErrorListener(this);
 	}
 
 	public int onStartCommand(Intent intent, int flags, int startId) {
@@ -60,20 +65,20 @@ public class PlayService extends Service implements MediaPlayer.OnPreparedListen
 		}
 
 		if (Actions.PAUSE.equals(intent.getAction())) {
-			showNotification(false);
+			notificationManager.notify(NOTI_ID, createNotification(false));
 			player.pause();
 			return START_NOT_STICKY;
 		} else {
 			player.reset();
 		}
 
-		showNotification(true);
+		startForeground(NOTI_ID, createNotification(true));
 		playStation(intent.getStringExtra("station.url"));
 
 		return START_NOT_STICKY;
 	}
 
-	private void showNotification(boolean progress) {
+	private Notification createNotification(boolean progress) {
 
 		boolean pause = Actions.PAUSE.equals(currentIntent.getAction());
 
@@ -113,7 +118,7 @@ public class PlayService extends Service implements MediaPlayer.OnPreparedListen
 			builder.setProgress(0, 0, true);
 		}
 
-		startForeground(1, builder.build());
+		return builder.build();
 	}
 
 	private void playStation(String url) {
@@ -137,7 +142,7 @@ public class PlayService extends Service implements MediaPlayer.OnPreparedListen
 	}
 
 	public void onPrepared(MediaPlayer player) {
-		showNotification(false);
+		notificationManager.notify(NOTI_ID, createNotification(false));
 
 		player.start();
 	}
