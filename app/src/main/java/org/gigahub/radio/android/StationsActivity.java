@@ -15,13 +15,16 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.androidannotations.annotations.AfterViews;
 import org.androidannotations.annotations.Background;
 import org.androidannotations.annotations.Click;
 import org.androidannotations.annotations.EActivity;
 import org.androidannotations.annotations.ItemClick;
+import org.androidannotations.annotations.Receiver;
 import org.androidannotations.annotations.UiThread;
 import org.androidannotations.annotations.ViewById;
 import org.androidannotations.annotations.rest.RestService;
@@ -39,6 +42,7 @@ public class StationsActivity extends Activity {
 	@ViewById TextView stationName;
 	@ViewById ImageView pause;
 	@ViewById ImageView stop;
+	@ViewById ProgressBar progressBar;
 
     @RestService RestApiClient apiClient;
 
@@ -112,14 +116,10 @@ public class StationsActivity extends Activity {
 	void listItemClicked(Station station) {
 		currentStation = station;
 
-		stationName.setText(station.getName());
-		pause.setImageResource(R.drawable.ic_action_pause);
-
 		Intent intent = new Intent(this, PlayService_.class);
 		intent.putExtra("station.name", station.getName());
 		intent.putExtra("station.url", station.getStreams().get(0).getUrl());
 
-		stopService(intent);
 		startService(intent);
 	}
 
@@ -131,26 +131,53 @@ public class StationsActivity extends Activity {
 		intent.putExtra("station.name", currentStation.getName());
 		intent.putExtra("station.url", currentStation.getStreams().get(0).getUrl());
 
-		if (pause.getDrawable().getConstantState().equals(getResources().getDrawable(R.drawable.ic_action_pause).getConstantState())) {
-			pause.setImageResource(R.drawable.ic_action_play);
-			intent.setAction(Actions.PAUSE);
-		} else {
-			pause.setImageResource(R.drawable.ic_action_pause);
-			intent.setAction(Actions.PLAY);
-		}
+		intent.setAction(Actions.PLAY_PAUSE);
 
 		startService(intent);
 	}
 
 	@Click
 	void stopClicked() {
-		currentStation = null;
-
-		stationName.setText("");
-		pause.setImageResource(R.drawable.ic_action_play);
-
-		Intent stopIntent = new Intent(this, PlayService_.class);
-		stopIntent.setAction(Actions.STOP);
-		stopService(stopIntent);
+		stopService(new Intent(Actions.STOP, null, this, PlayService_.class));
 	}
+
+	@Receiver(actions = {Actions.STATE_PLAY, Actions.STATE_PAUSE, Actions.STATE_STOP, Actions.STATE_PREPARE, Actions.STATE_ERROR}, local = true, registerAt = Receiver.RegisterAt.OnResumeOnPause)
+	void updateStateOnResumeOnPause(Intent intent) {
+
+		if(Actions.STATE_PLAY.equals(intent.getAction())) {
+			pause.setImageResource(R.drawable.ic_action_pause);
+			progressBar.setVisibility(View.GONE);
+		}
+
+		if(Actions.STATE_PAUSE.equals(intent.getAction())) {
+			pause.setImageResource(R.drawable.ic_action_play);
+			progressBar.setVisibility(View.GONE);
+		}
+
+		if(Actions.STATE_STOP.equals(intent.getAction())) {
+			currentStation = null;
+
+			stationName.setText("");
+			pause.setImageResource(R.drawable.ic_action_play);
+			progressBar.setVisibility(View.GONE);
+		}
+
+		if(Actions.STATE_PREPARE.equals(intent.getAction())) {
+			stationName.setText(intent.getStringExtra("station.name"));
+			pause.setImageResource(R.drawable.ic_action_pause);
+			progressBar.setVisibility(View.VISIBLE);
+		}
+
+		if(Actions.STATE_ERROR.equals(intent.getAction())) {
+			currentStation = null;
+
+			stationName.setText("");
+			pause.setImageResource(R.drawable.ic_action_play);
+			progressBar.setVisibility(View.GONE);
+
+			Toast.makeText(this, "Play error, choose another station", Toast.LENGTH_LONG).show();
+		}
+
+	}
+
 }
