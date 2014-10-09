@@ -67,11 +67,11 @@ public class PlayService extends Service implements MediaPlayer.OnPreparedListen
 		}
 
 		if (Actions.PLAY_PAUSE.equals(intent.getAction())) {
-			player.reset();
 			if (isPausePressed) {
 				isPausePressed = false;
 			} else {
 				isPausePressed = true;
+				player.reset();
 				notificationManager.notify(NOTI_ID, createNotification(false));
 				localBroadcastManager.sendBroadcast(getStateIntent(Actions.STATE_PAUSE));
 				return START_NOT_STICKY;
@@ -90,7 +90,7 @@ public class PlayService extends Service implements MediaPlayer.OnPreparedListen
 		notificationManager.cancel(NOTI_ID);
 
 		PendingIntent pStationsIntent = PendingIntent.getActivity(this, 0,
-				new Intent(this, StationsActivity_.class),
+				getStateIntent(isPausePressed ? Actions.STATE_PAUSE : player.isPlaying() ? Actions.STATE_PLAY : Actions.STATE_PREPARE),
 				PendingIntent.FLAG_UPDATE_CURRENT);
 
 		Intent currentStationIntent = new Intent(this, PlayService_.class);
@@ -113,7 +113,6 @@ public class PlayService extends Service implements MediaPlayer.OnPreparedListen
 				.setContentText(currentIntent.getStringExtra("station.name"))
 				.setSmallIcon(R.drawable.ic_action_volume_on)
 				.setContentIntent(pStationsIntent)
-				.setOngoing(true)
 				.addAction(isPausePressed ? R.drawable.ic_action_play : R.drawable.ic_action_pause, isPausePressed ? "Play" : "Pause", pPauseIntent)
 				.addAction(R.drawable.ic_action_stop, "Stop", pStopIntent);
 
@@ -125,6 +124,8 @@ public class PlayService extends Service implements MediaPlayer.OnPreparedListen
 	}
 
 	private void playStation(String url) {
+
+		player.reset();
 
 		if (!TextUtils.isEmpty(url)) {
 
@@ -171,7 +172,7 @@ public class PlayService extends Service implements MediaPlayer.OnPreparedListen
 		L.error("Play error. MediaPlayer will reset.");
 
 		localBroadcastManager.sendBroadcast(getStateIntent(Actions.STATE_ERROR));
-		mediaPlayer.reset();
+		stopSelf();
 		return false;
 	}
 
