@@ -89,8 +89,13 @@ public class PlayService extends Service implements MediaPlayer.OnPreparedListen
 	private Notification createNotification(boolean progress) {
 		notificationManager.cancel(NOTI_ID);
 
+		Intent stationsIntent = new Intent(this, StationsActivity_.class);
+		stationsIntent.putExtra("station.name", currentIntent.getStringExtra("station.name"));
+		stationsIntent.putExtra("station.url", currentIntent.getStringExtra("station.url"));
+		stationsIntent.putExtra("action", isPausePressed ? Actions.STATE_PAUSE : player.isPlaying() ? Actions.STATE_PLAY : Actions.STATE_PREPARE);
+
 		PendingIntent pStationsIntent = PendingIntent.getActivity(this, 0,
-				getStateIntent(isPausePressed ? Actions.STATE_PAUSE : player.isPlaying() ? Actions.STATE_PLAY : Actions.STATE_PREPARE),
+				stationsIntent,
 				PendingIntent.FLAG_UPDATE_CURRENT);
 
 		Intent currentStationIntent = new Intent(this, PlayService_.class);
@@ -146,9 +151,9 @@ public class PlayService extends Service implements MediaPlayer.OnPreparedListen
 	}
 
 	public void onPrepared(MediaPlayer player) {
+		player.start();
 		notificationManager.notify(NOTI_ID, createNotification(false));
 		localBroadcastManager.sendBroadcast(getStateIntent(Actions.STATE_PLAY));
-		player.start();
 	}
 
 	private Intent getStateIntent(String action) {
