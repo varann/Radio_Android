@@ -1,4 +1,4 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:tools="http://schemas.android.com/tools"
               android:layout_width="match_parent"
               android:layout_height="match_parent"
@@ -7,9 +7,8 @@
 
     <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentTop="false"
-        android:layout_above="@+id/info">
+        android:layout_height="0dp"
+        android:layout_weight="1">
 
         <ListView
             android:id="@+id/list"
@@ -28,22 +27,19 @@
     </FrameLayout>
 
     <LinearLayout
-        android:id="@+id/info"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_alignParentBottom="true">
+        android:orientation="horizontal">
 
         <ImageView
-            android:id="@+id/pause"
+            android:id="@+id/play_pause"
             android:layout_width="@dimen/button_size"
             android:layout_height="@dimen/button_size"
             android:src="@drawable/ic_action_play"
-            android:cropToPadding="false"
             android:scaleType="center"/>
 
         <TextView
-            android:id="@+id/stationName"
+            android:id="@+id/station_name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
@@ -54,4 +50,4 @@
     </LinearLayout>
 
 
-</RelativeLayout>
+</LinearLayout>

@@ -7,7 +7,7 @@ android {
     buildToolsVersion "20.0.0"
 
     defaultConfig {
-        applicationId "gigahub.org.radio_android"
+        applicationId "org.gigahub.radio_android"
         minSdkVersion 16
         targetSdkVersion 20
         versionCode 1

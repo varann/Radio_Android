@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.media.AudioManager;
 
 public class AudioBecomingNoisyReceiver extends BroadcastReceiver {
+
     public AudioBecomingNoisyReceiver() {
     }
 

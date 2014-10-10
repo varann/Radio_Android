@@ -11,6 +11,7 @@ import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.text.TextUtils;
+import android.widget.Toast;
 
 import org.androidannotations.annotations.EService;
 import org.androidannotations.annotations.SystemService;
@@ -45,7 +46,8 @@ public class PlayService extends Service implements MediaPlayer.OnPreparedListen
 				AudioManager.AUDIOFOCUS_GAIN);
 
 		if (result != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-			//TODO
+			stopSelf();
+			Toast.makeText(this, "Audio output used by another application", Toast.LENGTH_LONG).show();
 		}
 
 	}
