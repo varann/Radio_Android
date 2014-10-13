@@ -6,13 +6,13 @@ import android.support.v4.widget.SimpleCursorAdapter;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import org.androidannotations.annotations.AfterViews;
-import org.androidannotations.annotations.Background;
 import org.androidannotations.annotations.Bean;
 import org.androidannotations.annotations.Click;
 import org.androidannotations.annotations.EActivity;
@@ -32,12 +32,15 @@ public class StationsActivity extends Activity {
 	@ViewById TextView stationName;
 	@ViewById ProgressBar progressBar;
 	@ViewById ImageView playPause;
+	@ViewById ImageView favourite;
+	@ViewById LinearLayout infoPanel;
+	@ViewById TextView chooseStation;
 
 	@RestService RestApiClient apiClient;
 	@Bean RadioDB db;
 
 	@Extra("station.uuid") String stationUuid;
-	@Extra String action;
+	@Extra Actions.STATE state;
 
 	private SimpleCursorAdapter adapter;
 
@@ -55,7 +58,7 @@ public class StationsActivity extends Activity {
 	@AfterViews
 	void openFromNotification() {
 		if (stationUuid == null) return;
-		updateState(stationUuid, action);
+		updateState(stationUuid, state);
 	}
 
 	@Receiver(actions = Actions.DB_UPDATE, local = true, registerAt = Receiver.RegisterAt.OnResumeOnPause)
@@ -79,55 +82,48 @@ public class StationsActivity extends Activity {
 
 		Intent intent = new Intent(this, PlayService_.class);
 		intent.putExtra("station.uuid", stationUuid);
-
 		intent.setAction(Actions.PLAY_PAUSE);
 
 		startService(intent);
 	}
 
-	@Receiver(actions = {Actions.STATE_PLAY, Actions.STATE_PAUSE, Actions.STATE_STOP, Actions.STATE_PREPARE, Actions.STATE_ERROR}, local = true, registerAt = Receiver.RegisterAt.OnResumeOnPause)
-	void updateStateOnResumeOnPause(Intent intent) {
-		updateState(intent.getStringExtra("station.uuid"), intent.getAction());
+	@Click
+	void favouriteClicked() {
+		Intent intent = new Intent(this, PlayService_.class);
+		intent.putExtra("station.uuid", stationUuid);
+		intent.setAction(Actions.CHANGE_FAVOURITE);
+
+		startService(intent);
 	}
 
-	private void updateState(String uuid, String action) {
+	@Receiver(actions = Actions.UPDATE_STATE, local = true, registerAt = Receiver.RegisterAt.OnResumeOnPause)
+	void updateStateOnResumeOnPause(Intent intent) {
+		updateState(intent.getStringExtra("station.uuid"), (Actions.STATE) intent.getSerializableExtra("state"));
+	}
+
+	private void updateState(String uuid, Actions.STATE action) {
 
 		Station station = db.getStationByUuid(uuid);
-		String name = station.getName();
 
-		if (Actions.STATE_PLAY.equals(action)) {
-			stationName.setText(name);
-			playPause.setImageResource(R.drawable.ic_action_pause);
-			progressBar.setVisibility(View.GONE);
-		}
+		stationName.setText(station.getName());
+		favourite.setImageResource(station.getFavourite() ? R.drawable.ic_action_important : R.drawable.ic_action_not_important);
+		playPause.setImageResource(
+				Actions.STATE.PLAY.equals(action) || Actions.STATE.PREPARE.equals(action)
+						? R.drawable.ic_action_pause
+						: R.drawable.ic_action_play);
 
-		if (Actions.STATE_PAUSE.equals(action)) {
-			stationName.setText(name);
-			playPause.setImageResource(R.drawable.ic_action_play);
-			progressBar.setVisibility(View.GONE);
-		}
+		boolean showInfo = ! (Actions.STATE.ERROR.equals(action) || Actions.STATE.STOP.equals(action));
+		infoPanel.setVisibility(showInfo ? View.VISIBLE : View.INVISIBLE);
+		chooseStation.setVisibility(showInfo ? View.INVISIBLE : View.VISIBLE);
 
-		if (Actions.STATE_STOP.equals(action)) {
+		progressBar.setVisibility(Actions.STATE.PREPARE.equals(action) ? View.VISIBLE : View.GONE);
+
+		if (Actions.STATE.STOP.equals(action)) {
 			stationUuid = null;
-
-			stationName.setText("");
-			playPause.setImageResource(R.drawable.ic_action_play);
-			progressBar.setVisibility(View.GONE);
 		}
 
-		if (Actions.STATE_PREPARE.equals(action)) {
-			stationName.setText(name);
-			playPause.setImageResource(R.drawable.ic_action_pause);
-			progressBar.setVisibility(View.VISIBLE);
-		}
-
-		if (Actions.STATE_ERROR.equals(action)) {
+		if (Actions.STATE.ERROR.equals(action)) {
 			stationUuid = null;
-
-			stationName.setText("");
-			playPause.setImageResource(R.drawable.ic_action_play);
-			progressBar.setVisibility(View.GONE);
-
 			Toast.makeText(this, "Play error, choose another station", Toast.LENGTH_LONG).show();
 		}
 

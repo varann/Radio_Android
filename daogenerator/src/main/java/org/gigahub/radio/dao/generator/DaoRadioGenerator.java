@@ -21,6 +21,7 @@ public class DaoRadioGenerator {
 		station.addIdProperty();
 		station.addStringProperty("uuid").notNull().unique();
 		station.addStringProperty("name");
+		station.addBooleanProperty("favourite").notNull();
 
 		Entity stream = schema.addEntity("Stream");
 		stream.addIdProperty();

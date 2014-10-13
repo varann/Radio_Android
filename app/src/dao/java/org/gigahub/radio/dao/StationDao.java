@@ -26,6 +26,7 @@ public class StationDao extends AbstractDao<Station, Long> {
         public final static Property Id = new Property(0, Long.class, "id", true, "_id");
         public final static Property Uuid = new Property(1, String.class, "uuid", false, "UUID");
         public final static Property Name = new Property(2, String.class, "name", false, "NAME");
+        public final static Property Favourite = new Property(3, boolean.class, "favourite", false, "FAVOURITE");
     };
 
     private DaoSession daoSession;
@@ -46,7 +47,8 @@ public class StationDao extends AbstractDao<Station, Long> {
         db.execSQL("CREATE TABLE " + constraint + "'STATION' (" + //
                 "'_id' INTEGER PRIMARY KEY ," + // 0: id
                 "'UUID' TEXT NOT NULL UNIQUE ," + // 1: uuid
-                "'NAME' TEXT);"); // 2: name
+                "'NAME' TEXT," + // 2: name
+                "'FAVOURITE' INTEGER NOT NULL );"); // 3: favourite
     }
 
     /** Drops the underlying database table. */
@@ -70,6 +72,7 @@ public class StationDao extends AbstractDao<Station, Long> {
         if (name != null) {
             stmt.bindString(3, name);
         }
+        stmt.bindLong(4, entity.getFavourite() ? 1l: 0l);
     }
 
     @Override
@@ -90,7 +93,8 @@ public class StationDao extends AbstractDao<Station, Long> {
         Station entity = new Station( //
             cursor.isNull(offset + 0) ? null : cursor.getLong(offset + 0), // id
             cursor.getString(offset + 1), // uuid
-            cursor.isNull(offset + 2) ? null : cursor.getString(offset + 2) // name
+            cursor.isNull(offset + 2) ? null : cursor.getString(offset + 2), // name
+            cursor.getShort(offset + 3) != 0 // favourite
         );
         return entity;
     }
@@ -101,6 +105,7 @@ public class StationDao extends AbstractDao<Station, Long> {
         entity.setId(cursor.isNull(offset + 0) ? null : cursor.getLong(offset + 0));
         entity.setUuid(cursor.getString(offset + 1));
         entity.setName(cursor.isNull(offset + 2) ? null : cursor.getString(offset + 2));
+        entity.setFavourite(cursor.getShort(offset + 3) != 0);
      }
     
     /** @inheritdoc */

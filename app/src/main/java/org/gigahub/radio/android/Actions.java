@@ -5,16 +5,19 @@ package org.gigahub.radio.android;
  */
 public interface Actions {
 
+	enum STATE {
+		PLAY,
+		PAUSE,
+		STOP,
+		PREPARE,
+		ERROR
+	}
+
 	public static final String PREFIX = "org.gigahub.radio.android.";
 
 	public static final String PLAY_PAUSE = PREFIX + "PLAY_PAUSE";
 	public static final String STOP = PREFIX + "STOP";
-
-	public static final String STATE_PLAY = PREFIX + "STATE_PLAY";
-	public static final String STATE_PAUSE = PREFIX + "STATE_PAUSE";
-	public static final String STATE_STOP = PREFIX + "STATE_STOP";
-	public static final String STATE_PREPARE = PREFIX + "STATE_PREPARE";
-	public static final String STATE_ERROR = PREFIX + "STATE_ERROR";
-
+	public static final String UPDATE_STATE = PREFIX + "UPDATE_STATE";
+	public static final String CHANGE_FAVOURITE = PREFIX + "CHANGE_FAVOURITE";
 	public static final String DB_UPDATE = PREFIX + "DB_UPDATE";
 }

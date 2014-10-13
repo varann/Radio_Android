@@ -50,7 +50,22 @@ public class RadioDB {
 	public void setStations(List<ApiStation> stations) {
 
 		StationDao stationDao = daoSession.getStationDao();
-		stationDao.deleteAll();
+		List<Station> oldStations = stationDao.loadAll();
+
+		for (ApiStation station : stations) {
+			Station find = null;
+			for (Station oldStation : oldStations) {
+				if (oldStation.getUuid().equals(station.getUuid())) {
+					find = oldStation;
+					return;
+				}
+			}
+
+			if (find != null) {
+				oldStations.remove(find);
+			}
+		}
+		stationDao.deleteInTx(oldStations);
 
 		StreamDao streamDao = daoSession.getStreamDao();
 		streamDao.deleteAll();
@@ -58,10 +73,9 @@ public class RadioDB {
 		for (ApiStation station : stations) {
 			Station dbStation = new Station();
 			dbStation.setName(station.getName());
-			//TODO UUID должен приходить с сервера
-			dbStation.setUuid(UUID.randomUUID().toString());
+			dbStation.setUuid(station.getUuid());
 
-			long id = stationDao.insert(dbStation);
+			long id = stationDao.insertOrReplace(dbStation);
 
 			for (ApiStream stream : station.getStreams()) {
 				Stream dbStream = new Stream();
@@ -93,5 +107,9 @@ public class RadioDB {
 	public Station getStationByUuid(String uuid) {
 		QueryBuilder<Station> builder = daoSession.getStationDao().queryBuilder();
 		return builder.where(StationDao.Properties.Uuid.eq(uuid)).build().unique();
+	}
+
+	public void updateStation(Station station) {
+		daoSession.getStationDao().update(station);
 	}
 }

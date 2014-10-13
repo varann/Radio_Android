@@ -14,6 +14,7 @@ public class Station {
     /** Not-null value. */
     private String uuid;
     private String name;
+    private boolean favourite;
 
     /** Used to resolve relations */
     private transient DaoSession daoSession;
@@ -30,10 +31,11 @@ public class Station {
         this.id = id;
     }
 
-    public Station(Long id, String uuid, String name) {
+    public Station(Long id, String uuid, String name, boolean favourite) {
         this.id = id;
         this.uuid = uuid;
         this.name = name;
+        this.favourite = favourite;
     }
 
     /** called by internal mechanisms, do not call yourself. */
@@ -66,6 +68,14 @@ public class Station {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public boolean getFavourite() {
+        return favourite;
+    }
+
+    public void setFavourite(boolean favourite) {
+        this.favourite = favourite;
     }
 
     /** To-many relationship, resolved on first access (and after reset). Changes to to-many relations are not persisted, make changes to the target entity. */
