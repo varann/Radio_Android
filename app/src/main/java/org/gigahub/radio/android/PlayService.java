@@ -13,8 +13,10 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.text.TextUtils;
 import android.widget.Toast;
 
+import org.androidannotations.annotations.Bean;
 import org.androidannotations.annotations.EService;
 import org.androidannotations.annotations.SystemService;
+import org.gigahub.radio.dao.Station;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,13 +28,15 @@ public class PlayService extends Service implements MediaPlayer.OnPreparedListen
 	private static final Logger L = LoggerFactory.getLogger(PlayService.class.getSimpleName());
 	private static final int NOTI_ID = 1;
 
+	@Bean RadioDB db;
+
 	@SystemService AudioManager audioManager;
 	@SystemService NotificationManager notificationManager;
 	private LocalBroadcastManager localBroadcastManager;
 
 	private MediaPlayer player = null;
-	private Intent currentIntent;
 	private boolean isPausePressed = false;
+	private Station station;
 
 	@Override
 	public void onCreate() {
@@ -61,7 +65,7 @@ public class PlayService extends Service implements MediaPlayer.OnPreparedListen
 
 	public int onStartCommand(Intent intent, int flags, int startId) {
 
-		currentIntent = intent;
+		station = db.getStationByUuid(intent.getStringExtra("station.uuid"));
 
 		if (Actions.STOP.equals(intent.getAction())) {
 			stopSelf();
@@ -83,7 +87,7 @@ public class PlayService extends Service implements MediaPlayer.OnPreparedListen
 		startForeground(NOTI_ID, createNotification(true));
 		localBroadcastManager.sendBroadcast(getStateIntent(Actions.STATE_PREPARE));
 
-		playStation(intent.getStringExtra("station.url"));
+		playStation();
 
 		return START_NOT_STICKY;
 	}
@@ -92,8 +96,7 @@ public class PlayService extends Service implements MediaPlayer.OnPreparedListen
 		notificationManager.cancel(NOTI_ID);
 
 		Intent stationsIntent = new Intent(this, StationsActivity_.class);
-		stationsIntent.putExtra("station.name", currentIntent.getStringExtra("station.name"));
-		stationsIntent.putExtra("station.url", currentIntent.getStringExtra("station.url"));
+		stationsIntent.putExtra("station.uuid", station.getUuid());
 		stationsIntent.putExtra("action", isPausePressed ? Actions.STATE_PAUSE : player.isPlaying() ? Actions.STATE_PLAY : Actions.STATE_PREPARE);
 
 		PendingIntent pStationsIntent = PendingIntent.getActivity(this, 0,
@@ -101,10 +104,9 @@ public class PlayService extends Service implements MediaPlayer.OnPreparedListen
 				PendingIntent.FLAG_UPDATE_CURRENT);
 
 		Intent currentStationIntent = new Intent(this, PlayService_.class);
-		currentStationIntent.putExtra("station.name", currentIntent.getStringExtra("station.name"));
-		currentStationIntent.putExtra("station.url", currentIntent.getStringExtra("station.url"));
-		currentStationIntent.setAction(Actions.PLAY_PAUSE);
+		currentStationIntent.putExtra("station.uuid", station.getUuid());
 
+		currentStationIntent.setAction(Actions.PLAY_PAUSE);
 		PendingIntent pPauseIntent = PendingIntent.getService(this, 0,
 				currentStationIntent,
 				PendingIntent.FLAG_UPDATE_CURRENT);
@@ -117,7 +119,7 @@ public class PlayService extends Service implements MediaPlayer.OnPreparedListen
 
 		NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
 				.setContentTitle("Radio")
-				.setContentText(currentIntent.getStringExtra("station.name"))
+				.setContentText(station.getName())
 				.setSmallIcon(R.drawable.ic_action_volume_on)
 				.setContentIntent(pStationsIntent)
 				.addAction(isPausePressed ? R.drawable.ic_action_play : R.drawable.ic_action_pause, isPausePressed ? "Play" : "Pause", pPauseIntent)
@@ -130,10 +132,10 @@ public class PlayService extends Service implements MediaPlayer.OnPreparedListen
 		return builder.build();
 	}
 
-	private void playStation(String url) {
-
+	private void playStation() {
 		player.reset();
 
+		String url = station.getStreams().get(0).getUrl();
 		if (!TextUtils.isEmpty(url)) {
 
 			try {
@@ -160,8 +162,7 @@ public class PlayService extends Service implements MediaPlayer.OnPreparedListen
 
 	private Intent getStateIntent(String action) {
 		Intent intent = new Intent(action);
-		intent.putExtra("station.name", currentIntent.getStringExtra("station.name"));
-		intent.putExtra("station.url", currentIntent.getStringExtra("station.url"));
+		intent.putExtra("station.uuid", station.getUuid());
 		return intent;
 	}
 

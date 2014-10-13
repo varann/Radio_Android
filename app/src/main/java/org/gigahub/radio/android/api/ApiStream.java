@@ -3,7 +3,7 @@ package org.gigahub.radio.android.api;
 /**
  * Created by asavinova on 03/10/14.
  */
-public class Stream {
+public class ApiStream {
 
     private String url;
 

@@ -13,6 +13,6 @@ import java.util.List;
 public interface RestApiClient {
 
     @Get("/stations")
-    List<Station> getStations();
+    List<ApiStation> getStations();
 
 }

@@ -16,4 +16,5 @@ public interface Actions {
 	public static final String STATE_PREPARE = PREFIX + "STATE_PREPARE";
 	public static final String STATE_ERROR = PREFIX + "STATE_ERROR";
 
+	public static final String DB_UPDATE = PREFIX + "DB_UPDATE";
 }
