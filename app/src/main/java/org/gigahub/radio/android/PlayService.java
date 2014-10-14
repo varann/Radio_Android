@@ -131,11 +131,11 @@ public class PlayService extends Service implements MediaPlayer.OnPreparedListen
 				PendingIntent.FLAG_UPDATE_CURRENT);
 
 		NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
-				.setContentTitle("Radio")
+				.setContentTitle(getString(R.string.app_name))
 				.setContentText(station.getName())
-				.setSmallIcon(R.drawable.ic_action_volume_on)
+				.setSmallIcon(R.drawable.ic_launcher)
 				.setContentIntent(pStationsIntent)
-				.addAction(station.getFavourite() ? R.drawable.ic_action_important : R.drawable.ic_action_not_important, null, pFavouriteIntent)
+				.addAction(station.getFavourite() ? R.drawable.ic_action_important : R.drawable.ic_action_not_important, "Favorite", pFavouriteIntent)
 				.addAction(isPausePressed ? R.drawable.ic_action_play : R.drawable.ic_action_pause, isPausePressed ? "Play" : "Pause", pPauseIntent)
 				.addAction(R.drawable.ic_action_stop, "Stop", pStopIntent);
 
