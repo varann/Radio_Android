@@ -88,11 +88,9 @@ public class RadioDB {
 	}
 
 	public SimpleCursorAdapter getAllStationsAdapter() {
-		StationDao stationDao = daoSession.getStationDao();
-		Cursor cursor = db.query(stationDao.getTablename(), stationDao.getAllColumns(), null, null, null, null, null);
 		String[] from = { StationDao.Properties.Name.columnName };
 		int[] to = { R.id.name };
-		return new SimpleCursorAdapter(context, R.layout.station_list_item, cursor, from, to, 0);
+		return new SimpleCursorAdapter(context, R.layout.station_list_item, getStationsCursor(), from, to, 0);
 	}
 
 	public Cursor getStationsCursor() {
@@ -111,5 +109,16 @@ public class RadioDB {
 
 	public void updateStation(Station station) {
 		daoSession.getStationDao().update(station);
+	}
+
+	public SimpleCursorAdapter getFavouriteStationsAdapter() {
+		String[] from = { StationDao.Properties.Name.columnName };
+		int[] to = { R.id.name };
+		return new SimpleCursorAdapter(context, R.layout.station_list_item, getFavouriteStationsCursor(), from, to, 0);
+	}
+
+	public Cursor getFavouriteStationsCursor() {
+		StationDao stationDao = daoSession.getStationDao();
+		return db.query(stationDao.getTablename(), stationDao.getAllColumns(), "FAVOURITE", null, null, null, null);
 	}
 }
