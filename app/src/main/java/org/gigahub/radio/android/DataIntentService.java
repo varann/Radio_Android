@@ -8,8 +8,9 @@ import org.androidannotations.annotations.Bean;
 import org.androidannotations.annotations.EIntentService;
 import org.androidannotations.annotations.ServiceAction;
 import org.androidannotations.annotations.rest.RestService;
+import org.androidannotations.annotations.sharedpreferences.Pref;
+import org.gigahub.radio.android.api.ApiStation;
 import org.gigahub.radio.android.api.RestApiClient;
-import org.gigahub.radio.dao.Station;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +23,7 @@ public class DataIntentService extends IntentService {
 
 	@Bean RadioDB db;
 	@RestService RestApiClient apiClient;
+	@Pref Preferences_ pref;
 
 	private LocalBroadcastManager localBroadcastManager;
 
@@ -31,21 +33,37 @@ public class DataIntentService extends IntentService {
 		localBroadcastManager = LocalBroadcastManager.getInstance(this);
     }
 
-    @Override
+	@Override
     protected void onHandleIntent(Intent intent) {
     }
 
 	@ServiceAction
 	void updateStationsAction(boolean force) {
-		L.debug("Update stations service action");
+		if (force || isDataOutdated() || db.getStations().isEmpty()) {
+			sendDBState(Actions.DB_STATE.PROGRESS);
+			try {
+				List<ApiStation> stations = apiClient.getStations();
+				db.setStations(stations);
+				pref.edit().lastUpdated().put(System.currentTimeMillis()).apply();
 
-		List<Station> stations = db.getStations();
+				sendDBState(Actions.DB_STATE.DONE);
 
-		if (stations.isEmpty() || force) {
-			db.setStations(apiClient.getStations());
+			} catch (Exception e) {
+				sendDBState(Actions.DB_STATE.ERROR);
+			}
 
-			localBroadcastManager.sendBroadcast(new Intent(Actions.DB_UPDATE));
 		}
+	}
+
+	private boolean sendDBState(Actions.DB_STATE state) {
+		Intent intent = new Intent(Actions.UPDATE_DB_STATE);
+		intent.putExtra("db.state", state);
+		return localBroadcastManager.sendBroadcast(intent);
+	}
+
+	private boolean isDataOutdated() {
+		// Перевод миллисекунд в часы. Если прошло больше суток, то данные устарели.
+		return (System.currentTimeMillis() - pref.lastUpdated().getOr(0)) / 1000 / 60 / 60 > 24;
 	}
 
 }

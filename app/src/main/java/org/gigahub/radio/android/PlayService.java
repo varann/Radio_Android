@@ -71,8 +71,8 @@ public class PlayService extends Service implements MediaPlayer.OnPreparedListen
 			station.setFavourite(!station.getFavourite());
 			db.updateStation(station);
 			notificationManager.notify(NOTI_ID, createNotification(isPausePressed ? false : player.isPlaying() ? false : true));
-			localBroadcastManager.sendBroadcast(getUpdateStateIntent(isPausePressed ? Actions.STATE.PAUSE : player.isPlaying() ? Actions.STATE.PLAY : Actions.STATE.PREPARE));
-			localBroadcastManager.sendBroadcast(new Intent(Actions.DB_UPDATE));
+			localBroadcastManager.sendBroadcast(getUpdateStateIntent(isPausePressed ? Actions.PLAYER_STATE.PAUSE : player.isPlaying() ? Actions.PLAYER_STATE.PLAY : Actions.PLAYER_STATE.PREPARE));
+			localBroadcastManager.sendBroadcast(new Intent(Actions.UPDATE_DB_STATE));
 			return START_NOT_STICKY;
 		}
 
@@ -88,13 +88,13 @@ public class PlayService extends Service implements MediaPlayer.OnPreparedListen
 				isPausePressed = true;
 				player.reset();
 				notificationManager.notify(NOTI_ID, createNotification(false));
-				localBroadcastManager.sendBroadcast(getUpdateStateIntent(Actions.STATE.PAUSE));
+				localBroadcastManager.sendBroadcast(getUpdateStateIntent(Actions.PLAYER_STATE.PAUSE));
 				return START_NOT_STICKY;
 			}
 		}
 
 		startForeground(NOTI_ID, createNotification(true));
-		localBroadcastManager.sendBroadcast(getUpdateStateIntent(Actions.STATE.PREPARE));
+		localBroadcastManager.sendBroadcast(getUpdateStateIntent(Actions.PLAYER_STATE.PREPARE));
 
 		playStation();
 
@@ -106,7 +106,7 @@ public class PlayService extends Service implements MediaPlayer.OnPreparedListen
 
 		Intent stationsIntent = new Intent(this, StationsActivity_.class);
 		stationsIntent.putExtra("station.uuid", station.getUuid());
-		stationsIntent.putExtra("state", isPausePressed ? Actions.STATE.PAUSE : player.isPlaying() ? Actions.STATE.PLAY : Actions.STATE.PREPARE);
+		stationsIntent.putExtra("state", isPausePressed ? Actions.PLAYER_STATE.PAUSE : player.isPlaying() ? Actions.PLAYER_STATE.PLAY : Actions.PLAYER_STATE.PREPARE);
 
 		PendingIntent pStationsIntent = PendingIntent.getActivity(this, 0,
 				stationsIntent,
@@ -171,11 +171,11 @@ public class PlayService extends Service implements MediaPlayer.OnPreparedListen
 	public void onPrepared(MediaPlayer player) {
 		player.start();
 		notificationManager.notify(NOTI_ID, createNotification(false));
-		localBroadcastManager.sendBroadcast(getUpdateStateIntent(Actions.STATE.PLAY));
+		localBroadcastManager.sendBroadcast(getUpdateStateIntent(Actions.PLAYER_STATE.PLAY));
 	}
 
-	private Intent getUpdateStateIntent(Actions.STATE state) {
-		Intent intent = new Intent(Actions.UPDATE_STATE);
+	private Intent getUpdateStateIntent(Actions.PLAYER_STATE state) {
+		Intent intent = new Intent(Actions.UPDATE_PLAYER_STATE);
 		intent.putExtra("station.uuid", station.getUuid());
 		intent.putExtra("state", state);
 		return intent;
@@ -184,7 +184,7 @@ public class PlayService extends Service implements MediaPlayer.OnPreparedListen
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
-		localBroadcastManager.sendBroadcast(getUpdateStateIntent(Actions.STATE.STOP));
+		localBroadcastManager.sendBroadcast(getUpdateStateIntent(Actions.PLAYER_STATE.STOP));
 		player.release();
 		audioManager.abandonAudioFocus(this);
 		stopForeground(true);
@@ -194,7 +194,7 @@ public class PlayService extends Service implements MediaPlayer.OnPreparedListen
 	public boolean onError(MediaPlayer mediaPlayer, int i, int i2) {
 		L.error("Play error. MediaPlayer will reset.");
 
-		localBroadcastManager.sendBroadcast(getUpdateStateIntent(Actions.STATE.ERROR));
+		localBroadcastManager.sendBroadcast(getUpdateStateIntent(Actions.PLAYER_STATE.ERROR));
 		stopSelf();
 		return false;
 	}

@@ -3,5 +3,6 @@
 
 	<color name="bg">#121314</color>
 	<color name="info_panel_bg">#222326</color>
+	<color name="refresh_color">#0080a7</color>
 
 </resources>

@@ -18,7 +18,6 @@ import org.gigahub.radio.dao.Stream;
 import org.gigahub.radio.dao.StreamDao;
 
 import java.util.List;
-import java.util.UUID;
 
 import de.greenrobot.dao.query.QueryBuilder;
 
@@ -50,23 +49,9 @@ public class RadioDB {
 	public void setStations(List<ApiStation> stations) {
 
 		StationDao stationDao = daoSession.getStationDao();
-		List<Station> oldStations = stationDao.loadAll();
+		List<Station> favoriteStations = stationDao.queryBuilder().where(StationDao.Properties.Favourite.eq(true)).build().list();
 
-		for (ApiStation station : stations) {
-			Station find = null;
-			for (Station oldStation : oldStations) {
-				if (oldStation.getUuid().equals(station.getUuid())) {
-					find = oldStation;
-					return;
-				}
-			}
-
-			if (find != null) {
-				oldStations.remove(find);
-			}
-		}
-		stationDao.deleteInTx(oldStations);
-
+		stationDao.deleteAll();
 		StreamDao streamDao = daoSession.getStreamDao();
 		streamDao.deleteAll();
 
@@ -75,7 +60,14 @@ public class RadioDB {
 			dbStation.setName(station.getName());
 			dbStation.setUuid(station.getUuid());
 
-			long id = stationDao.insertOrReplace(dbStation);
+			for (Station fav : favoriteStations) {
+				if (station.getUuid().equals(fav.getUuid())) {
+					dbStation.setFavourite(true);
+					break;
+				}
+			}
+
+			long id = stationDao.insert(dbStation);
 
 			for (ApiStream stream : station.getStreams()) {
 				Stream dbStream = new Stream();

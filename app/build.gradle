@@ -7,7 +7,7 @@ android {
     buildToolsVersion "20.0.0"
 
     defaultConfig {
-        applicationId "org.gigahub.radio_android"
+        applicationId "org.gigahub.radio.android"
         minSdkVersion 16
         targetSdkVersion 20
         versionCode 1
@@ -30,11 +30,7 @@ android {
     sourceSets {
         main {
             java {
-                srcDir 'src/java'
                 srcDir 'src/dao/java'
-            }
-            resources {
-                srcDir 'src/resources'
             }
         }
     }

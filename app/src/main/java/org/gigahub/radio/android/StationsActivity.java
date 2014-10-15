@@ -23,8 +23,6 @@ import org.androidannotations.annotations.EActivity;
 import org.androidannotations.annotations.Extra;
 import org.androidannotations.annotations.Receiver;
 import org.androidannotations.annotations.ViewById;
-import org.androidannotations.annotations.rest.RestService;
-import org.gigahub.radio.android.api.RestApiClient;
 import org.gigahub.radio.dao.Station;
 
 import java.util.ArrayList;
@@ -41,12 +39,10 @@ public class StationsActivity extends FragmentActivity implements StationsFragme
 	@ViewById TextView chooseStation;
 	@ViewById ViewPager pager;
 
-	@RestService RestApiClient apiClient;
-
 	@Bean RadioDB db;
 
 	@Extra("station.uuid") String stationUuid;
-	@Extra Actions.STATE state;
+	@Extra Actions.PLAYER_STATE state;
 
 	@AfterViews
 	void afterViews() {
@@ -110,9 +106,9 @@ public class StationsActivity extends FragmentActivity implements StationsFragme
 		startService(intent);
 	}
 
-	@Receiver(actions = Actions.UPDATE_STATE, local = true, registerAt = Receiver.RegisterAt.OnResumeOnPause)
+	@Receiver(actions = Actions.UPDATE_PLAYER_STATE, local = true, registerAt = Receiver.RegisterAt.OnResumeOnPause)
 	void updateStateOnResumeOnPause(Intent intent) {
-		state = (Actions.STATE) intent.getSerializableExtra("state");
+		state = (Actions.PLAYER_STATE) intent.getSerializableExtra("state");
 		getIntent().putExtra("state", state);
 		updateState(intent.getStringExtra("station.uuid"));
 	}
@@ -123,21 +119,21 @@ public class StationsActivity extends FragmentActivity implements StationsFragme
 		stationName.setText(station.getName());
 		favourite.setImageResource(station.getFavourite() ? R.drawable.ic_action_important : R.drawable.ic_action_not_important);
 		playPause.setImageResource(
-				Actions.STATE.PLAY.equals(state) || Actions.STATE.PREPARE.equals(state)
+				Actions.PLAYER_STATE.PLAY.equals(state) || Actions.PLAYER_STATE.PREPARE.equals(state)
 						? R.drawable.ic_action_pause
 						: R.drawable.ic_action_play);
 
-		boolean showInfo = !(Actions.STATE.ERROR.equals(state) || Actions.STATE.STOP.equals(state));
+		boolean showInfo = !(Actions.PLAYER_STATE.ERROR.equals(state) || Actions.PLAYER_STATE.STOP.equals(state));
 		infoPanel.setVisibility(showInfo ? View.VISIBLE : View.INVISIBLE);
 		chooseStation.setVisibility(showInfo ? View.INVISIBLE : View.VISIBLE);
 
-		progressBar.setVisibility(Actions.STATE.PREPARE.equals(state) ? View.VISIBLE : View.GONE);
+		progressBar.setVisibility(Actions.PLAYER_STATE.PREPARE.equals(state) ? View.VISIBLE : View.GONE);
 
-		if (Actions.STATE.STOP.equals(state)) {
+		if (Actions.PLAYER_STATE.STOP.equals(state)) {
 			stationUuid = null;
 		}
 
-		if (Actions.STATE.ERROR.equals(state)) {
+		if (Actions.PLAYER_STATE.ERROR.equals(state)) {
 			stationUuid = null;
 			Toast.makeText(this, "Play error, choose another station", Toast.LENGTH_LONG).show();
 		}
